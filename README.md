@@ -3,13 +3,13 @@ Tool ini bekerja otomatis membaca file, memproses byte-level data, dan menyimpan
 
 ---
 
-## 📌 Fitur Utama
+##  Fitur Utama
 
-- 🔍 Membaca file dalam format biner/hex  
-- 🛠️ Memperbaiki zlib stream yang rusak (raw / deflate)  
-- 🔎 Mengidentifikasi pola encoding custom  
-- 💾 Output otomatis ke folder `output/`  
-- 🧪 Logging proses menggunakan Rich (tampilan lebih rapi & berwarna)  
+-  Membaca file dalam format biner/hex  
+-  Memperbaiki zlib stream yang rusak (raw / deflate)  
+-  Mengidentifikasi pola encoding custom  
+-  Output otomatis ke folder `output/`  
+-  Logging proses menggunakan Rich (tampilan lebih rapi & berwarna)  
 
 ---
 
@@ -60,7 +60,7 @@ python script.py --repair --verbose input/data.bin
 
 ---
 
-## 📤 Output
+##  Output
 
 Hasil perbaikan akan otomatis tersimpan di:
 
@@ -72,7 +72,7 @@ Nama dan format file dapat berbeda sesuai pengaturan di dalam script.
 
 ---
 
-## 🧪 Contoh Penggunaan
+##  Contoh Penggunaan
 
 ```bash
 python script.py 
@@ -88,7 +88,7 @@ Output terminal:
 
 ---
 
-## 📘 Penjelasan Teknis (Ringkas)
+## Penjelasan Teknis (Ringkas)
 
 Script menjalankan beberapa langkah:
 
@@ -109,7 +109,7 @@ Sertakan contoh file yang bermasalah & output error.
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
 Proyek ini menggunakan lisensi:
 

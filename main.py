@@ -14,10 +14,6 @@ try:
 except:
     HAVE_MAGIC = False
 
-
-# ================================================================
-# File Type Detection
-# ================================================================
 def detect_file_type(path: Path):
     if HAVE_MAGIC:
         try:
@@ -48,10 +44,6 @@ def rename_with_extension(path: Path, ext: str):
     path.rename(cand)
     return cand
 
-
-# ================================================================
-# PNG CRC Repair
-# ================================================================
 PNG_SIG = b'\x89PNG\r\n\x1a\n'
 
 def repair_png_crc(path: Path, outpath: Path = None):
@@ -96,10 +88,6 @@ def repair_png_crc(path: Path, outpath: Path = None):
     write_to.write_bytes(bytes(out))
     return True, changed
 
-
-# ================================================================
-# Utilities
-# ================================================================
 def extract_png_text_chunks(path: Path):
     chunks = []
     data = path.read_bytes()
@@ -168,9 +156,6 @@ def extract_lsb_stream(arr, bitcount):
     return bits
 
 
-# ================================================================
-# Generate StegSolve-like Channels
-# ================================================================
 def save_mode(img, path, index, name, data):
     Image.frombytes("L", img.size, data).save(path / f"{index:02d}_{name}.png")
 
@@ -188,7 +173,6 @@ def generate_stegsolve_modes(img, out):
     modes = []
     idx = 1
 
-    # BASIC
     modes.append(("RGB", rgb))
     modes.append(("Grayscale", ImageOps.grayscale(img)))
     modes.append(("Red", Image.frombytes("L", (w, h), R)))
@@ -196,10 +180,8 @@ def generate_stegsolve_modes(img, out):
     modes.append(("Blue", Image.frombytes("L", (w, h), B)))
     modes.append(("Alpha", Image.frombytes("L", (w, h), A)))
 
-    # Negative
     modes.append(("Negative", ImageOps.invert(rgb.convert("RGB"))))
 
-    # Shuffles
     for order in [(0,1,2), (2,1,0), (1,0,2), (1,2,0), (2,0,1)]:
         arr = []
         for p in pixels:
@@ -208,7 +190,6 @@ def generate_stegsolve_modes(img, out):
 
         modes[-1][1].putdata(arr)
 
-    # XOR Modes
     def xor(a,b): return a ^ b
     xor_rb = bytes([xor(r,b) for r,b in zip(R,B)])
     xor_rg = bytes([xor(r,g) for r,g in zip(R,G)])
@@ -218,21 +199,16 @@ def generate_stegsolve_modes(img, out):
     modes.append(("XOR_RG", Image.frombytes("L",(w,h), xor_rg)))
     modes.append(("XOR_GB", Image.frombytes("L",(w,h), xor_gb)))
 
-    # LSB Modes 1–4 bits
     for bit in range(1,5):
         for name, ARR in [("R",R), ("G",G), ("B",B)]:
             arr = bytes([ ((v >> (bit-1)) & 1) * 255 for v in ARR ])
             modes.append((f"LSB{bit}_{name}", Image.frombytes("L",(w,h), arr)))
 
-    # Save all
     for name, im in modes:
         im.save(out / f"{idx:02d}_{name}.png")
         idx += 1
 
 
-# ================================================================
-# Metadata
-# ================================================================
 def extract_metadata(img, path):
     meta = {}
     meta["format"] = img.format
@@ -244,21 +220,15 @@ def extract_metadata(img, path):
 
 
 
-# ================================================================
-# Main Stego Processing Per File
-# ================================================================
 def process_file(path: Path, out_root: Path):
 
-    # Detect file type
     detected = detect_file_type(path)
     if not detected:
         return False, "unknown"
 
-    # rename if needed
     if path.suffix.lower().lstrip(".") != detected:
         path = rename_with_extension(path, detected)
 
-    # Open image
     try:
         img = Image.open(str(path))
     except Exception as e:
@@ -267,7 +237,6 @@ def process_file(path: Path, out_root: Path):
     if img.format.lower() not in ("png","jpeg","gif","bmp","webp"):
         return False, "unsupported"
 
-    # Repair PNG CRC
     repaired = None
     if img.format.lower() == "png":
         bak = path.with_suffix(path.suffix + ".bak")
@@ -284,26 +253,20 @@ def process_file(path: Path, out_root: Path):
                 fixed.unlink()
                 repaired = False
 
-    # Output dir
     out_folder = out_root / f"{path.stem}_output"
     out_folder.mkdir(parents=True, exist_ok=True)
 
-    # copy original
     shutil.copy2(path, out_folder / "original.png")
 
-    # Generate StegSolve-style images
     generate_stegsolve_modes(img, out_folder)
 
-    # Prepare metadata
     meta = extract_metadata(img, path)
     if repaired is not None:
         meta["png_repair"] = repaired
 
-    # PNG chunks
     if img.format.lower() == "png":
         meta["png_chunks"] = extract_png_text_chunks(path)
 
-    # EXIF
     if hasattr(img, "getexif"):
         try:
             exif = img.getexif()
@@ -315,15 +278,12 @@ def process_file(path: Path, out_root: Path):
         except:
             pass
 
-    # Anomaly
     meta["pixel_anomaly_count"] = anomaly_pixel_scan(img)
 
-    # LSB carving
     R = [p[0] for p in img.convert("RGB").getdata()]
     bits = extract_lsb_stream(R, 1)
     meta["carving"] = carve_files_from_bits(bits)
 
-    # Write metadata
     with open(out_folder / "metadata.txt", "w", encoding="utf-8") as f:
         for k,v in meta.items():
             f.write(f"{k}: {v}\n\n")
@@ -332,9 +292,6 @@ def process_file(path: Path, out_root: Path):
 
 
 
-# ================================================================
-# Main Runner – Forensik 1
-# ================================================================
 def main():
     base_dir = Path("./Forensik 1")
     out_root = base_dir / "stego_output"
